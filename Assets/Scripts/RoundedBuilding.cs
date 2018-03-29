@@ -8,6 +8,7 @@ namespace DefaultNamespace
     {
         private readonly float _angleCorrectionLimit = 135;
         private readonly float _angleCorrectionFactor = 0.2f;
+        private List<Vector3> _buildingShape;
 
         public RoundedBuilding()
         {
@@ -22,66 +23,68 @@ namespace DefaultNamespace
             List<Vector3> internalSquare = GetStreetPoints(out streetPlanes, square);
             StreetPlanes.SetVertex(streetPlanes);
             StreetPlanes.SetTriangles();
-            
+
             DebugDrawPointList(internalSquare, Color.blue);
-            BuildingBase.SetVertex(GetBuildingBase(internalSquare));
+            _buildingShape = GetBuildingBase(internalSquare);
+            List<Vector3> allBasePoints = new List<Vector3>(internalSquare);
+            allBasePoints.AddRange(_buildingShape);
+
+            BuildingBase.SetVertex(allBasePoints);
             BuildingBase.SetTriangles();
-            
-            DebugDrawPointList(BuildingBase.Vertices, Color.red);
+
+            DebugDrawPointList(_buildingShape, Color.red);
             BuildingTermination = GetTermination();
-
+            BuildingParts.Add(StreetPlanes);
+            BuildingParts.Add(BuildingBase);
             RefreshFloors(frequency);
-
-          
         }
 
         public override void RefreshFloors(int frequency)
         {
-            Vertices.AddRange(StreetPlanes.Vertices);
-            Vertices.AddRange(BuildingBase.Vertices);
-
-            List<BuildingPart> building = new List<BuildingPart>();
-            List<Vector3> allStructureVerts = new List<Vector3>();
-
+            List<Vector3> allStructureVerts = new List<Vector3>(_buildingShape);
+            List<Vector3> newFloorVerts = null;
+            
             for (int i = 1; i <= frequency; i++)
             {
-                BuildingPart newFloor = new BuildingFloor();
-
-                List<Vector3> newFloorVerts = ExtendFloorBase(BuildingBase.Vertices, floorNumber: i,
+                newFloorVerts = ExtendFloorBase(_buildingShape, floorNumber: i,
                     scaledFactor: Random.Range(.7f, 1.2f),
                     eulerRotation: new Vector3(Random.Range(-3, 3), Random.Range(-5, 5), Random.Range(-3, 3)),
                     up: PlaneDirection);
                 allStructureVerts.AddRange(newFloorVerts);
-                newFloor.SetVertex(newFloorVerts);
-
-                building.Add(newFloor);
             }
-
-            Vertices.AddRange(allStructureVerts);
 
             List<Vector3> roofTopPoints = new List<Vector3>();
 
             BuildingTerminations buildingTermination;
+            
             if (frequency != 0)
             {
+                BuildingStructure.SetVertex(allStructureVerts);
+                BuildingStructure.FloorVerts = _buildingShape.Count;
+                BuildingStructure.SetTriangles();
+                
                 buildingTermination = BuildingTermination;
-                roofTopPoints = building[building.Count - 1].Vertices;
+                roofTopPoints = newFloorVerts;
             }
             else
             {
                 buildingTermination = BuildingTerminations.Floor;
-                roofTopPoints.AddRange(BuildingBase.Vertices);
+                roofTopPoints.AddRange(_buildingShape);
             }
-
+            
             roofTopPoints = ConstructTermination(buildingTermination, roofTopPoints);
-            RoofTermination.SetVertex(roofTopPoints);
 
-            Vertices.AddRange(RoofTermination.Vertices);
+            for (int i =0; i<roofTopPoints.Count;i++)
+            {
+                Math3D.CreateSphereInPos(roofTopPoints[i], Color.yellow, "roofftop_"+i);
+            }
+            RoofTermination.SetVertex(roofTopPoints);
+            RoofTermination.RoofType = buildingTermination;
+            RoofTermination.SetTriangles();
         }
 
         private List<Vector3> GetBuildingBase(List<Vector3> internalSquare)
-        {    
-            
+        {
             Vector3 puntA = internalSquare[0];
             Vector3 puntB = internalSquare[1];
             Vector3 puntC = internalSquare[2];
@@ -98,14 +101,10 @@ namespace DefaultNamespace
             Vector3 intesection2 = GetIntesectionsBetweenHalfsWithBisector(halfSegmentCd, halfSegmentBc, puntA, puntC);
             Vector3 intesection3 = GetIntesectionsBetweenHalfsWithBisector(halfSegmentAb, halfSegmentBc, puntB, puntD);
             Vector3 intesection4 = GetIntesectionsBetweenHalfsWithBisector(halfSegmentDa, halfSegmentCd, puntB, puntD);
-            Vector3 roundedA =
-                GetMiddlePoint(intesection1, puntA);
-            Vector3 roundedB =
-                GetMiddlePoint(intesection3, puntB);
-            Vector3 roundedC =
-                GetMiddlePoint(intesection2, puntC);
-            Vector3 roundedD =
-                GetMiddlePoint(intesection4, puntD);
+            Vector3 roundedA = GetMiddlePoint(intesection1, puntA);
+            Vector3 roundedB = GetMiddlePoint(intesection3, puntB);
+            Vector3 roundedC = GetMiddlePoint(intesection2, puntC);
+            Vector3 roundedD = GetMiddlePoint(intesection4, puntD);
             Vector3 helperPointAb1 = GetHelperPoint(roundedA, halfSegmentAb, puntA, segmentAb);
             Vector3 helperPointAb2 = GetHelperPoint(roundedB, halfSegmentAb, puntA, segmentAb);
             Vector3 helperPointBc1 = GetHelperPoint(roundedB, halfSegmentBc, puntB, segmentBc);
@@ -127,26 +126,26 @@ namespace DefaultNamespace
 
             List<Vector3> roundedPoints = new List<Vector3>
             {
-                //Side PlaneA
-                roundedA,
-                helperPointAb1,
-                halfSegmentAb,
-                helperPointAb2,
-                //Side PlaneB
-                roundedB,
-                helperPointBc1,
-                halfSegmentBc,
-                helperPointBc2,
-                //Side PlaneC
-                roundedC,
-                helperPointCd1,
-                halfSegmentCd,
-                helperPointCd2,
-                //Side PlaneD
-                roundedD,
-                helperPointDa1,
+                //CornerA
                 halfSegmentDa,
                 helperPointDa2,
+                roundedA,
+                helperPointAb1,
+                //CornerB
+                halfSegmentAb,
+                helperPointAb2,
+                roundedB,
+                helperPointBc1,
+                //CornerC
+                halfSegmentBc,
+                helperPointBc2,
+                roundedC,
+                helperPointCd1,
+                //CornerD
+                halfSegmentCd,
+                helperPointCd2,
+                roundedD,
+                helperPointDa1
             };
             return roundedPoints;
         }

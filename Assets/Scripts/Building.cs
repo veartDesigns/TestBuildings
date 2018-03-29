@@ -12,15 +12,20 @@ namespace DefaultNamespace
         protected Vector3 PlaneDirection;
 
         protected BuildingPart BuildingBase;
-        protected StreetPlanes StreetPlanes;
-        protected BuildingRoof RoofTermination;
-        
-        private readonly int _enumLenght = (int)BuildingTerminations.COUNT; //Enum.GetNames(typeof(BuildingTermination)).Length;
+        protected BuildingPart StreetPlanes;
+        protected BuildingPart RoofTermination;
+        protected BuildingPart BuildingStructure;
+
+        protected List<BuildingPart> BuildingParts;
+
+        private readonly int
+            _enumLenght = (int) BuildingTerminations.COUNT; //Enum.GetNames(typeof(BuildingTermination)).Length;
+
         private const float StreetWidthFactor = .1f;
         private const float ModuleHeight = 4f;
-        
+
         //ReSharper disable once InconsistentNaming
-        protected enum BuildingTerminations
+        public enum BuildingTerminations
         {
             Flat,
             Rounded,
@@ -30,16 +35,18 @@ namespace DefaultNamespace
             Floor,
             COUNT
         }
-        
+
         protected BuildingTerminations BuildingTermination;
 
         protected Building()
         {
+            BuildingParts = new List<BuildingPart>(4);
             Uvs = new List<Vector2>();
             Triangles = new List<int>();
             Vertices = new List<Vector3>();
             StreetPlanes = new StreetPlanes();
             RoofTermination = new BuildingRoof();
+            BuildingStructure = new BuildingStructure();
         }
 
         public abstract void Create(List<Vector3> square, int frequency);
@@ -82,7 +89,6 @@ namespace DefaultNamespace
                 //corner PlaneA
                 square[0],
                 subpoint2Da,
-
                 //Long planeB
                 subpoint2Bc,
                 internalSquare[2],
@@ -91,7 +97,6 @@ namespace DefaultNamespace
                 //corner PlaneB
                 square[1],
                 subpoint2Ab,
-
                 //Long planeC
                 subpoint2Cd,
                 internalSquare[3],
@@ -145,23 +150,7 @@ namespace DefaultNamespace
 
         protected List<Vector3> ConstructTermination(BuildingTerminations buildingTerminations, List<Vector3> roofBase)
         {
-            switch (buildingTerminations)
-            {
-                case BuildingTerminations.Flat:
-                    return BuildingTerminationsCreator.CreateFlatRooftop(roofBase);
-                case BuildingTerminations.Rounded:
-                    return BuildingTerminationsCreator.CreateRoundedRooftop(roofBase);
-                case BuildingTerminations.StairsOut:
-                    return BuildingTerminationsCreator.CreateStairsOutRooftop(roofBase);
-                case BuildingTerminations.StairsIn:
-                    return BuildingTerminationsCreator.CreateStairsInRooftop(roofBase);
-                case BuildingTerminations.ToMiddle:
-                    return BuildingTerminationsCreator.CreateToMiddleUpRooftop(roofBase);
-                case BuildingTerminations.Floor:
-                    return BuildingTerminationsCreator.CreateFloor(roofBase);
-                default:
-                    throw new ArgumentOutOfRangeException("buildingTerminations", buildingTerminations, null);
-            }
+            return BuildingTerminationsCreator.CreateRoofTop(buildingTerminations, roofBase);
         }
 
         private Vector3 RotatePointAroundPivot(Vector3 eulerRotation, Vector3 pivot, Vector3 vector)
@@ -171,7 +160,7 @@ namespace DefaultNamespace
             return dir + pivot;
         }
 
-        protected BuildingTerminations GetTermination()
+        public BuildingTerminations GetTermination()
         {
             return BuildingTerminations.Flat;
             // return (BuildingTermination) Random.Range(0, _enumLenght);
