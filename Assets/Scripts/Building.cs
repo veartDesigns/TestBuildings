@@ -22,7 +22,7 @@ namespace DefaultNamespace
             _enumLenght = (int) BuildingTerminations.COUNT; //Enum.GetNames(typeof(BuildingTermination)).Length;
 
         private const float StreetWidthFactor = .1f;
-        private const float ModuleHeight = 4f;
+        protected const float ModuleHeight = 4f;
 
         //ReSharper disable once InconsistentNaming
         public enum BuildingTerminations
@@ -148,9 +148,10 @@ namespace DefaultNamespace
             return result;
         }
 
-        protected List<Vector3> ConstructTermination(BuildingTerminations buildingTerminations, List<Vector3> roofBase)
+        protected List<Vector3> ConstructTermination(BuildingTerminations buildingTerminations, List<Vector3> roofBase,
+            Vector3 planeDirection, float moduleHeight)
         {
-            return BuildingTerminationsCreator.CreateRoofTop(buildingTerminations, roofBase);
+            return BuildingTerminationsCreator.CreateRoofTop(buildingTerminations, roofBase,planeDirection,moduleHeight);
         }
 
         private Vector3 RotatePointAroundPivot(Vector3 eulerRotation, Vector3 pivot, Vector3 vector)
@@ -162,7 +163,7 @@ namespace DefaultNamespace
 
         public BuildingTerminations GetTermination()
         {
-            return BuildingTerminations.Flat;
+            return BuildingTerminations.Rounded;
             // return (BuildingTermination) Random.Range(0, _enumLenght);
         }
     }

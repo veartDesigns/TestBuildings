@@ -18,7 +18,7 @@ namespace DefaultNamespace
         public override void Create(List<Vector3> square, int frequency)
         {
             DebugDrawPointList(square, Color.green);
-            PlaneDirection = Vector3.Cross(square[0] - square[1], square[0] - square[3]);
+            PlaneDirection = Vector3.Cross(square[0] - square[1], square[0] - square[3]).normalized;
             List<Vector3> streetPlanes = new List<Vector3>();
             List<Vector3> internalSquare = GetStreetPoints(out streetPlanes, square);
             StreetPlanes.SetVertex(streetPlanes);
@@ -43,11 +43,11 @@ namespace DefaultNamespace
         {
             List<Vector3> allStructureVerts = new List<Vector3>(_buildingShape);
             List<Vector3> newFloorVerts = null;
-            
+
             for (int i = 1; i <= frequency; i++)
             {
                 newFloorVerts = ExtendFloorBase(_buildingShape, floorNumber: i,
-                    scaledFactor: Random.Range(.7f, 1.2f),
+                    scaledFactor: Random.Range(.9f, 1.2f),
                     eulerRotation: new Vector3(Random.Range(-3, 3), Random.Range(-5, 5), Random.Range(-3, 3)),
                     up: PlaneDirection);
                 allStructureVerts.AddRange(newFloorVerts);
@@ -56,13 +56,13 @@ namespace DefaultNamespace
             List<Vector3> roofTopPoints = new List<Vector3>();
 
             BuildingTerminations buildingTermination;
-            
+
             if (frequency != 0)
             {
                 BuildingStructure.SetVertex(allStructureVerts);
-                BuildingStructure.FloorVerts = _buildingShape.Count;
+                BuildingStructure.BuildingShapeVerts = _buildingShape.Count;
                 BuildingStructure.SetTriangles();
-                
+
                 buildingTermination = BuildingTermination;
                 roofTopPoints = newFloorVerts;
             }
@@ -71,14 +71,14 @@ namespace DefaultNamespace
                 buildingTermination = BuildingTerminations.Floor;
                 roofTopPoints.AddRange(_buildingShape);
             }
-            
-            roofTopPoints = ConstructTermination(buildingTermination, roofTopPoints);
 
-            for (int i =0; i<roofTopPoints.Count;i++)
+            roofTopPoints = ConstructTermination(buildingTermination, roofTopPoints, PlaneDirection, ModuleHeight);
+            foreach (var p in roofTopPoints)
             {
-                Math3D.CreateSphereInPos(roofTopPoints[i], Color.yellow, "roofftop_"+i);
+                Math3D.CreateSphereInPos(p, Color.black, "roofPoints");
             }
             RoofTermination.SetVertex(roofTopPoints);
+            RoofTermination.BuildingShapeVerts = _buildingShape.Count;
             RoofTermination.RoofType = buildingTermination;
             RoofTermination.SetTriangles();
         }

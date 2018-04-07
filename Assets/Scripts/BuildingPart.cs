@@ -8,7 +8,7 @@ namespace DefaultNamespace
         public List<int> Triangles;
         public readonly List<Vector2> Uvs;
         public List<Vector3> Vertices;
-        public int FloorVerts;
+        public int BuildingShapeVerts;
         public Building.BuildingTerminations RoofType;
 
         protected BuildingPart()
@@ -76,7 +76,7 @@ namespace DefaultNamespace
     {
         public override void SetTriangles()
         {
-            Triangles = BuildingTerminationsCreator.GetRoofTriangles(Vertices, RoofType);
+            Triangles = BuildingTerminationsCreator.GetRoofTriangles(Vertices, RoofType, BuildingShapeVerts);
             GeneralFunctions.CreateObject(Vertices, Triangles);
         }
 
@@ -89,17 +89,17 @@ namespace DefaultNamespace
     {
         public override void SetTriangles()
         {
-            int floors = Vertices.Count / FloorVerts;
+            int floors = Vertices.Count / BuildingShapeVerts;
 
             for (int i = 0; i < floors - 1; i++)
             {
-                for (int j = 0; j < FloorVerts; j++)
+                for (int j = 0; j < BuildingShapeVerts; j++)
                 {
-                    int initialPoint = i * FloorVerts;
+                    int initialPoint = i * BuildingShapeVerts;
                     int index1 = initialPoint + j;
-                    int index2 = index1 + FloorVerts;
-                    int index3 = index1 + 1 >= initialPoint + FloorVerts ? initialPoint : index1 + 1;
-                    int index4 = index3 + FloorVerts;
+                    int index2 = index1 + BuildingShapeVerts;
+                    int index3 = index1 + 1 >= initialPoint + BuildingShapeVerts ? initialPoint : index1 + 1;
+                    int index4 = index3 + BuildingShapeVerts;
 
                     Triangles.Add(index1);
                     Triangles.Add(index3);
@@ -155,14 +155,12 @@ namespace DefaultNamespace
         public static void CreateObject(List<Vector3> verts, List<int> tris)
         {
             GameObject go = new GameObject();
-            MeshRenderer goad = go.AddComponent<MeshRenderer>();
+            go.AddComponent<MeshRenderer>();
             MeshFilter gomf = go.AddComponent<MeshFilter>();
 
-            Mesh goadMesh = new Mesh
-            {
-                vertices = verts.ToArray(),
-                triangles = tris.ToArray()
-            };
+            Mesh goadMesh = new Mesh();
+            goadMesh.vertices = verts.ToArray();
+            goadMesh.triangles = tris.ToArray();
             goadMesh.RecalculateNormals();
             gomf.mesh = goadMesh;
         }
